@@ -6,18 +6,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const client_1 = require("@prisma/client");
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
-const jobRoutes_1 = __importDefault(require("./routes/jobRoutes"));
+const roomRoutes_1 = __importDefault(require("./routes/roomRoutes"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const usersRoutes_1 = __importDefault(require("./routes/usersRoutes"));
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const swagger_1 = __importDefault(require("./swagger"));
+const feedBackRoutes_1 = __importDefault(require("./routes/feedBackRoutes")); // Import the function
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 const prisma = new client_1.PrismaClient();
-// Connect to the database
 prisma.$connect()
-    .then(() => console.log('Connected to the database'))
+    .then(() => {
+    console.log('Connected to the database');
+})
     .catch(err => console.error('Database connection error:', err));
 //use cors
 app.use((req, res, next) => {
@@ -29,7 +31,8 @@ app.use((req, res, next) => {
 app.use(express_1.default.json());
 app.use('/api', authRoutes_1.default);
 app.use('/api', usersRoutes_1.default);
-app.use('/api', jobRoutes_1.default);
+app.use('/api', feedBackRoutes_1.default);
+app.use('/api', roomRoutes_1.default);
 app.use((err, req, res, next) => {
     res.status(500).json({ error: err.message });
 });

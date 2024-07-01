@@ -1,50 +1,67 @@
+require('dotenv').config();
 import { Request, Response } from 'express';
-import jwt from 'jsonwebtoken';
-import { createUser, findUserByEmail, comparePassword, UserDocument } from '../models/User';
-import dotenv from 'dotenv';
 import bcrypt from 'bcrypt';
-dotenv.config();
+import jwt from 'jsonwebtoken';
+import User from '../models/User';
+import { UserDocument } from '../types/types';
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined in the environment variables.");
+}
 
-export const signup = async (req: Request, res: Response): Promise<void> => {
+export const signup = async (req: Request, res: Response) => {
   try {
     const { username, email, password, role } = req.body;
-    const existingEmail = await findUserByEmail(email);
-    if(existingEmail) {
-      res.status(409).json({ error: 'Email already exists' });
-      return;
-    }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await createUser({ username, email, password: hashedPassword, role });
-    res.status(201).json({ user });
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      role,
+    });
 
+    await user.save();
+    res.status(201).send('User created successfully');
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    res.status(500).json({ message: 'Error creating user', error });
   }
 };
 
-export const login = async (req: Request, res: Response): Promise<void> => {
+export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-    const user: UserDocument | null = await findUserByEmail(email);
+    const user = await User.findOne({ email }) as UserDocument;
     if (!user) {
-      res.status(401).json({ error: 'Invalid credentials' });
-      return;
+      return res.status(404).send('User not found');
     }
-    const isMatch = await comparePassword(password, user.password);
-    if (!isMatch) {
-      res.status(401).json({ error: 'Invalid credentials' });
-      return;
-    }
-    if (!JWT_SECRET) {
-      throw new Error('JWT_SECRET is not defined');
-    }
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
 
-    const response = { token, user: { username: user.username, email: user.email, role: user.role, user_id: user.id } };
-    res.status(200).json({ response });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).send('Invalid credentials');
+    }
+    // Include additional details in the JWT
+    const tokenPayload = {
+      id: user._id,
+      username: user.username,
+      role: user.role
+    };
+    
+    const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' });
+
+    const response = {
+      message: 'Logged in successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      },
+      token
+    };
+    res.json(response);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    res.status(500).json({ message: 'Login error', error });
   }
 };
+

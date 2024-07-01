@@ -1,16 +1,15 @@
 import express from 'express';
-import { postRoom, getRoom, getRooms, removeRoom, setRoomAsOccupied, setRoomAsFree, removeAllRooms, generateWeeklyReport } from '../controllers/roomController';
-import { isAuthenticated, isAdmin } from '../Middleware/authsMiddleware';
+import { createRoom, getAllRooms, updateRoomStatus, generateOccupancyReport } from '../controllers/roomController';
+import isAuthenticated from '../Middleware/authsMiddleware';
 
 const router = express.Router();
 
-router.post('/rooms', isAuthenticated, isAdmin, postRoom);
-router.get('/rooms/report', generateWeeklyReport);
-router.get('/rooms/:roomNumber', getRoom);
-router.get('/rooms', getRooms);
-router.delete('/rooms/:id', isAuthenticated, isAdmin, removeRoom);
-router.put('/rooms/:roomNumber/occupy/:numberOfDays', isAuthenticated, isAdmin, setRoomAsOccupied);
-router.put('/rooms/:roomNumber/free', isAuthenticated, isAdmin, setRoomAsFree);
-router.delete('/rooms', isAuthenticated, isAdmin, removeAllRooms);
+router.post('/rooms', isAuthenticated, createRoom);
+// router.get('/rooms/:roomNumber',isAuthenticated, getRoom);
+router.get('/rooms', isAuthenticated, getAllRooms);
+router.put('/rooms/:roomNumber/status', isAuthenticated, updateRoomStatus);
+router.get('/rooms/report', isAuthenticated, generateOccupancyReport);
+// router.put('/rooms/:roomNumber', isAuthenticated, updateRoom);
+// router.delete('/rooms/:roomNumber', isAdmin, deleteRoom);
 
 export default router;

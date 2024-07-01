@@ -1,6 +1,6 @@
 import express from 'express';
-import { getUsers } from '../controllers/usersController';
-import { isAuthenticated, isAdmin } from '../Middleware/authsMiddleware';
+import { getAllUsers } from '../controllers/usersController';
+// import { isAuthenticated, isAdmin } from '../Middleware/authsMiddleware';
 
 const router = express.Router();
 /**
@@ -17,6 +17,6 @@ const router = express.Router();
  *       403:
  *         description: Only admins can access this endpoint
  */
-router.get('/users/all', isAuthenticated, isAdmin, getUsers);
+router.get('/users/all',  getAllUsers);
 
 export default router;

@@ -1,20 +1,20 @@
-import { initializePrisma } from './prisma';
+// import { initializePrisma } from './prisma';
 
-const prisma = initializePrisma();
+// const prisma = initializePrisma();
 
 
-export interface FeedbackDocument {
-    id?: number;
-    roomId: number;
-    rating: number;
-    comment: string;
-    createdAt?: string;
-  }
+// export interface FeedbackDocument {
+//     id?: number;
+//     roomId: number;
+//     rating: number;
+//     comment: string;
+//     createdAt?: string;
+//   }
   
-export const createFeedback = async (data: FeedbackDocument) => {
-    return await prisma.feedback.create({ data });
-  };
+// export const createFeedback = async (data: FeedbackDocument) => {
+//     return await prisma.feedback.create({ data });
+//   };
 
-export const getAllFeedbacks = async () => {
-    return await prisma.feedback.findMany();
-  };
+// export const getAllFeedbacks = async () => {
+//     return await prisma.feedback.findMany();
+//   };

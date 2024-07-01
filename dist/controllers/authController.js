@@ -22,12 +22,16 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { username, email, password, role } = req.body;
+        const existingEmail = yield (0, User_1.findUserByEmail)(email);
+        if (existingEmail) {
+            res.status(409).json({ error: 'Email already exists' });
+            return;
+        }
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
         const user = yield (0, User_1.createUser)({ username, email, password: hashedPassword, role });
         res.status(201).json({ user });
     }
     catch (error) {
-        console.log(error);
         res.status(500).json({ error: error.message });
     }
 });

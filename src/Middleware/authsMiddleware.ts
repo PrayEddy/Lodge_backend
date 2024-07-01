@@ -1,44 +1,25 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { UserDocument } from '../models/User';
-import { initializePrisma } from '../models/prisma';
+import { UserDocument } from '../types/types';
 
-const prisma = initializePrisma();
-
-declare global {
-  namespace Express {
-    interface Request {
-      user?: UserDocument;
-    }
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.split(' ')[1]; // Bearer Token
+  if (!token) {
+      return res.status(401).json({ message: 'No token provided' });
   }
-}
 
-export const isAuthenticated = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined");
+  }
+
   try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { userId: string };
-    const user = await prisma.user.findUnique({ where: { id: Number(decoded.userId) } });
-    if (!user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    req.user = user;
-    next();
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as UserDocument;
+      req.user = decoded;
+      next();
   } catch (error) {
-    res.status(401).json({ error: 'Unauthorized' });
+      res.status(401).json({ message: 'Invalid token' });
   }
 };
 
-export const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
-  if (req.user && req.user.role === 'admin') {
-    next(); 
-  } else {
-    res.status(403).json({ error: 'Access denied. You do not have permission to perform this action.' });
-  }
-};
+export default isAuthenticated
