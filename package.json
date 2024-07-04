@@ -21,10 +21,10 @@
     "typescript": "^5.5.2"
   },
   "scripts": {
-    "start": "prisma generate && node ./dist/app.js",
+    "start": "node ./dist/app.js",
     "test": "jest",
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
-    "build": "npx prisma generate && npx prisma migrate deploy && tsc"
+    "build": "tsc"
   },
   "author": "Eddy",
   "license": "ISC",
