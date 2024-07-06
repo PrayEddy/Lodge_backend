@@ -13,51 +13,64 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = exports.signup = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const User_1 = require("../models/User");
-const dotenv_1 = __importDefault(require("dotenv"));
+require('dotenv').config();
 const bcrypt_1 = __importDefault(require("bcrypt"));
-dotenv_1.default.config();
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const User_1 = __importDefault(require("../models/User"));
 const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET is not defined in the environment variables.");
+}
 const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { username, email, password, role } = req.body;
-        const existingEmail = yield (0, User_1.findUserByEmail)(email);
-        if (existingEmail) {
-            res.status(409).json({ error: 'Email already exists' });
-            return;
-        }
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
-        const user = yield (0, User_1.createUser)({ username, email, password: hashedPassword, role });
-        res.status(201).json({ user });
+        const user = new User_1.default({
+            username,
+            email,
+            password: hashedPassword,
+            role,
+        });
+        yield user.save();
+        res.status(201).send('User created successfully');
     }
     catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: 'Error creating user', error });
     }
 });
 exports.signup = signup;
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { email, password } = req.body;
-        const user = yield (0, User_1.findUserByEmail)(email);
+        const user = yield User_1.default.findOne({ email });
         if (!user) {
-            res.status(401).json({ error: 'Invalid credentials' });
-            return;
+            return res.status(404).send('User not found');
         }
-        const isMatch = yield (0, User_1.comparePassword)(password, user.password);
+        const isMatch = yield bcrypt_1.default.compare(password, user.password);
         if (!isMatch) {
-            res.status(401).json({ error: 'Invalid credentials' });
-            return;
+            return res.status(400).send('Invalid credentials');
         }
-        if (!JWT_SECRET) {
-            throw new Error('JWT_SECRET is not defined');
-        }
-        const token = jsonwebtoken_1.default.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
-        const response = { token, user: { username: user.username, email: user.email, role: user.role, user_id: user.id } };
-        res.status(200).json({ response });
+        // Include additional details in the JWT
+        const tokenPayload = {
+            id: user._id,
+            username: user.username,
+            role: user.role
+        };
+        const token = jsonwebtoken_1.default.sign(tokenPayload, JWT_SECRET, { expiresIn: '7d' });
+        const response = {
+            message: 'Logged in successfully',
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                role: user.role
+            },
+            token
+        };
+        res.json(response);
     }
     catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: 'Login error', error });
     }
 });
 exports.login = login;

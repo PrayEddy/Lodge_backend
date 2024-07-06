@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const usersController_1 = require("../controllers/usersController");
-const authsMiddleware_1 = require("../Middleware/authsMiddleware");
+// import { isAuthenticated, isAdmin } from '../Middleware/authsMiddleware';
 const router = express_1.default.Router();
 /**
  * @swagger
@@ -21,5 +21,5 @@ const router = express_1.default.Router();
  *       403:
  *         description: Only admins can access this endpoint
  */
-router.get('/users/all', authsMiddleware_1.isAuthenticated, authsMiddleware_1.isAdmin, usersController_1.getUsers);
+router.get('/users/all', usersController_1.getAllUsers);
 exports.default = router;

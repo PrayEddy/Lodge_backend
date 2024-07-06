@@ -12,139 +12,71 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateWeeklyReport = exports.setRoomAsFree = exports.setRoomAsOccupied = exports.removeAllRooms = exports.removeRoom = exports.getRooms = exports.getRoom = exports.postRoom = void 0;
-const Room_1 = require("../models/Room");
-const puppeteer_1 = __importDefault(require("puppeteer"));
-const postRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const room = req.body;
-    const existingRoom = yield (0, Room_1.findRoomByNumber)(room.roomNumber);
-    if (existingRoom) {
-        res.status(409).json({ error: 'Room already exists' });
-        return;
+exports.generateOccupancyReport = exports.updateRoomStatus = exports.getAllRooms = exports.createRoom = void 0;
+const Room_1 = __importDefault(require("../models/Room"));
+const createRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const data = req.body;
+        const newRoom = yield Room_1.default.create(data);
+        console.log('Room created:', newRoom);
+        res.status(201).json(newRoom);
     }
-    const newRoom = yield (0, Room_1.createRoom)(room);
-    res.status(201).json(newRoom);
+    catch (error) {
+        console.error('Error creating room:', error);
+        res.status(500).json({ message: 'Failed to create room' });
+    }
 });
-exports.postRoom = postRoom;
-const getRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+exports.createRoom = createRoom;
+const getAllRooms = (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const rooms = yield Room_1.default.find();
+        res.json(rooms);
+    }
+    catch (error) {
+        console.error('Error fetching rooms:', error);
+        res.status(500).json({ message: 'Failed to fetch rooms' });
+    }
+});
+exports.getAllRooms = getAllRooms;
+const updateRoomStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { roomNumber } = req.params;
-    const roomNum = Number(roomNumber);
-    if (isNaN(roomNum)) {
-        res.status(400).json({ error: 'Invalid room number' });
-        return;
-    }
-    const room = yield (0, Room_1.findRoomByNumber)(roomNum);
-    if (!room) {
-        res.status(404).json({ error: 'Room not found' });
-        return;
-    }
-    res.json(room);
-});
-exports.getRoom = getRoom;
-const getRooms = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const rooms = yield (0, Room_1.findAllRooms)();
-    res.json(rooms);
-});
-exports.getRooms = getRooms;
-const removeRoom = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
-    yield (0, Room_1.deleteRoom)(Number(id));
-    res.json({ message: 'Room deleted successfully' });
-});
-exports.removeRoom = removeRoom;
-const removeAllRooms = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const rooms = yield (0, Room_1.findAllRooms)();
-    rooms.forEach((room) => __awaiter(void 0, void 0, void 0, function* () {
-        yield (0, Room_1.deleteRoom)(room.id);
-    }));
-    res.json({ message: 'All rooms deleted successfully' });
-});
-exports.removeAllRooms = removeAllRooms;
-const setRoomAsOccupied = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { roomNumber, numberOfDays } = req.params;
-    const roomNum = Number(roomNumber);
-    const days = Number(numberOfDays);
-    const isOccupied = yield (0, Room_1.findOccupiedRooms)();
-    if (isOccupied) {
-        res.status(400).json({ error: 'Room is already occupied' });
-        return;
-    }
-    if (isNaN(roomNum) || isNaN(days)) {
-        res.status(400).json({ error: 'Invalid room number or number of days' });
-        return;
-    }
-    const room = yield (0, Room_1.findRoomByNumber)(roomNum);
-    if (!room) {
-        res.status(404).json({ error: 'Room not found' });
-        return;
-    }
-    const totalPrice = room.price * days;
-    const updatedRoom = yield (0, Room_1.updateRoom)(roomNum, { isOccupied: true, price: totalPrice });
-    if (!updatedRoom) {
-        res.status(500).json({ error: 'Failed to update room' });
-        return;
-    }
-    res.json(updatedRoom);
-});
-exports.setRoomAsOccupied = setRoomAsOccupied;
-const setRoomAsFree = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { roomNumber } = req.params;
-    const roomNum = Number(roomNumber);
-    if (isNaN(roomNum)) {
-        res.status(400).json({ error: 'Invalid room number' });
-        return;
-    }
-    const updatedRoom = yield (0, Room_1.updateRoom)(roomNum, { isOccupied: false });
-    if (!updatedRoom) {
-        res.status(404).json({ error: 'Room not found' });
-        return;
-    }
-    res.json(updatedRoom);
-});
-exports.setRoomAsFree = setRoomAsFree;
-const generateWeeklyReport = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    // Fetch the date range from the request body
-    const { startDate, endDate } = req.body;
-    // Fetch all rooms that are occupied within the given date range
-    const occupiedRooms = yield (0, Room_1.findOccupiedRooms)(new Date(startDate), new Date(endDate));
-    // Calculate the total price for each room and the total amount
-    let totalAmount = 0;
-    const roomReports = occupiedRooms.map((room) => {
-        const roomDoc = room;
-        if (roomDoc.checkInDate && roomDoc.checkOutDate) {
-            const daysOccupied = Math.ceil((new Date(roomDoc.checkOutDate).getTime() - new Date(roomDoc.checkInDate).getTime()) / (1000 * 60 * 60 * 24));
-            const totalPrice = roomDoc.price * daysOccupied;
-            totalAmount += totalPrice;
-            return {
-                roomNumber: roomDoc.roomNumber,
-                price: roomDoc.price,
-                daysOccupied,
-                totalPrice,
-            };
+    try {
+        const room = yield Room_1.default.findOne({ roomNumber });
+        if (!room) {
+            res.status(404).json({ message: 'Room not found' });
+            return;
         }
-    }).filter(Boolean);
-    // Define the HTML content
-    const htmlContent = `
-    <h1>Weekly Report</h1>
-    ${roomReports.map(room => `
-      <h2>Room Number: ${room.roomNumber}</h2>
-      <p>Price per day: ${room.price}</p>
-      <p>Days Occupied: ${room.daysOccupied}</p>
-      <p>Total Price: ${room.totalPrice}</p>
-    `).join('')}
-    <h2>Total Amount: ${totalAmount}</h2>
-  `;
-    // Generate the PDF
-    const browser = yield puppeteer_1.default.launch();
-    const page = yield browser.newPage();
-    yield page.setContent(htmlContent);
-    const pdf = yield page.pdf({ format: 'A4' });
-    yield browser.close();
-    // Now you can send this PDF to the client or save it in your server
-    res.json({
-        roomReports,
-        totalAmount,
-        pdf
-    });
+        const updatedRoom = yield Room_1.default.findOneAndUpdate({ roomNumber }, { isOccupied: !room.isOccupied }, { new: true });
+        res.json(updatedRoom);
+    }
+    catch (error) {
+        console.error('Error updating room status:', error);
+        res.status(500).json({ message: 'Failed to update room status' });
+    }
 });
-exports.generateWeeklyReport = generateWeeklyReport;
+exports.updateRoomStatus = updateRoomStatus;
+const generateOccupancyReport = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
+    if (!startDate || !endDate) {
+        res.status(400).json({ message: 'Missing startDate or endDate parameters' });
+        return;
+    }
+    try {
+        const rooms = yield Room_1.default.find({
+            isOccupied: true,
+            checkInDate: { $gte: new Date(startDate) },
+            checkOutDate: { $lte: new Date(endDate) }
+        });
+        const totalRevenue = rooms.reduce((acc, room) => acc + (room.price || 0), 0);
+        res.json({
+            report: rooms,
+            totalRevenue
+        });
+    }
+    catch (error) {
+        console.error('Error generating report:', error);
+        res.status(500).json({ message: 'Failed to generate report' });
+    }
+});
+exports.generateOccupancyReport = generateOccupancyReport;

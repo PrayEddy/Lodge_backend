@@ -8,25 +8,75 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.getUser = exports.getUsers = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
-const getUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const users = yield prisma.user.findMany();
-    res.json(users);
+exports.getAllUsers = exports.deleteUser = exports.updateUser = exports.getUser = exports.createUser = void 0;
+const User_1 = __importDefault(require("../models/User"));
+const createUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = new User_1.default(req.body);
+        yield user.save();
+        res.status(201).send(user);
+    }
+    catch (error) {
+        res.status(400).send({ message: 'Error creating user' });
+    }
 });
-exports.getUsers = getUsers;
+exports.createUser = createUser;
 const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
-    const user = yield prisma.user.findUnique({ where: { id: Number(id) } });
-    res.json(user);
+    try {
+        const user = yield User_1.default.findById(req.params.id);
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+        res.send(user);
+    }
+    catch (error) {
+        res.status(500).send({ message: 'Error retrieving user' });
+    }
 });
 exports.getUser = getUser;
-//delete user
+const updateUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const updates = Object.keys(req.body);
+    const allowedUpdates = ['username', 'email', 'password', 'role']; // Specify allowable fields
+    const isValidOperation = updates.every(update => allowedUpdates.includes(update));
+    if (!isValidOperation) {
+        return res.status(400).send({ message: 'Invalid updates!' });
+    }
+    try {
+        const user = yield User_1.default.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+        res.send(user);
+    }
+    catch (error) {
+        res.status(400).send({ message: 'Error updating user' });
+    }
+});
+exports.updateUser = updateUser;
 const deleteUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
-    yield prisma.user.delete({ where: { id: Number(id) } });
-    res.json({ message: 'User deleted successfully' });
+    try {
+        const user = yield User_1.default.findByIdAndDelete(req.params.id);
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+        res.send({ message: 'User deleted' });
+    }
+    catch (error) {
+        res.status(500).send({ message: 'Error deleting user' });
+    }
 });
 exports.deleteUser = deleteUser;
+const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const users = yield User_1.default.find({});
+        res.send(users);
+    }
+    catch (error) {
+        res.status(500).send({ message: 'Error fetching users' });
+    }
+});
+exports.getAllUsers = getAllUsers;

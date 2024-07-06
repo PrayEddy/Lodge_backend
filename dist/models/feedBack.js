@@ -1,22 +1,16 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllFeedbacks = exports.createFeedback = void 0;
-const prisma_1 = require("./prisma");
-const prisma = (0, prisma_1.initializePrisma)();
-const createFeedback = (data) => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma.feedback.create({ data });
-});
-exports.createFeedback = createFeedback;
-const getAllFeedbacks = () => __awaiter(void 0, void 0, void 0, function* () {
-    return yield prisma.feedback.findMany();
-});
-exports.getAllFeedbacks = getAllFeedbacks;
+// import { initializePrisma } from './prisma';
+// const prisma = initializePrisma();
+// export interface FeedbackDocument {
+//     id?: number;
+//     roomId: number;
+//     rating: number;
+//     comment: string;
+//     createdAt?: string;
+//   }
+// export const createFeedback = async (data: FeedbackDocument) => {
+//     return await prisma.feedback.create({ data });
+//   };
+// export const getAllFeedbacks = async () => {
+//     return await prisma.feedback.findMany();
+//   };

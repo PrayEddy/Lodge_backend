@@ -31,7 +31,6 @@ app.use('/api', authRoutes);
 app.use('/api', usersRoutes);
 // Uncomment or add additional routes as needed
 // app.use('/api', feedBackRoutes);
-// app.use('/api', jobRoutes);
 app.use('/api', roomRoutes)
 
 // Error Handling Middleware
