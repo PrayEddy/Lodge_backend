@@ -35,44 +35,66 @@ export const updateRoomStatus = async (req: Request, res: Response): Promise<voi
       return;
     }
 
+    let update: Partial<RoomDocument> = {
+      isOccupied: !room.isOccupied
+    };
+
+    if (!room.isOccupied) {
+      const checkInDate = new Date();
+      const checkOutDate = new Date(checkInDate.getTime() + 24 * 60 * 60 * 1000);
+
+      update.checkInDate = checkInDate;
+      update.checkOutDate = checkOutDate;
+    }
+
     const updatedRoom = await Room.findOneAndUpdate(
       { roomNumber },
-      { isOccupied: !room.isOccupied }, 
-      { new: true }  
+      update, 
+      { new: true }
     );
 
-    res.json(updatedRoom);  
+    res.json(updatedRoom);
   } catch (error) {
     console.error('Error updating room status:', error);
     res.status(500).json({ message: 'Failed to update room status' });
   }
 };
 
-export const generateOccupancyReport = async (req: Request, res: Response): Promise<void> => {
+export const getOccupiedRoomsByDate = async (req: Request, res: Response): Promise<void> => {
   const startDate = req.query.startDate as string;
   const endDate = req.query.endDate as string;
 
-  if (!startDate || !endDate) {
-     res.status(400).json({ message: 'Missing startDate or endDate parameters' });
-     return
-    }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    res.status(400).json({ message: 'Invalid date format. Please use YYYY-MM-DD.' });
+    return;
+  }
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    res.status(400).json({ message: 'Invalid dates provided.' });
+    return;
+  }
 
   try {
     const rooms = await Room.find({
       isOccupied: true,
-      checkInDate: { $gte: new Date(startDate) },
-      checkOutDate: { $lte: new Date(endDate) }
+      checkInDate: { $gte: start },
+      checkOutDate: { $lte: end }
     });
 
-    const totalRevenue = rooms.reduce((acc, room) => acc + (room.price || 0), 0);
+    const totalRevenue = rooms.reduce((acc, room) => acc + room.price, 0);
 
     res.json({
-      report: rooms,
-      totalRevenue
+      occupiedRooms: rooms,
+      totalRevenue,
+      count: rooms.length
     });
   } catch (error) {
-    console.error('Error generating report:', error);
-    res.status(500).json({ message: 'Failed to generate report' });
+    console.error('Error fetching occupied rooms:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
 
