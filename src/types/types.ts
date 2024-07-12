@@ -15,3 +15,10 @@ export interface UserDocument extends Document {
   password: string;
   role: string;
 }
+
+export interface OccupancyLogDocument extends Document {
+  roomNumber: number;  // Changed to string assuming room numbers could have letters (e.g., "101A")
+  checkInDate: Date;
+  checkOutDate: Date;
+  price: number;
+}

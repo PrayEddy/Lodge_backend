@@ -9,7 +9,7 @@ const roomSchema: Schema<RoomDocument> = new Schema({
   checkInDate: { type: Date, default: null },    
   checkOutDate: { type: Date, default: null }    
 }, {
-  timestamps: true  // Optional: if you want to automatically add createdAt and updatedAt timestamps
+  timestamps: true 
 });
 
 const Room = mongoose.model<RoomDocument>('Room', roomSchema);
