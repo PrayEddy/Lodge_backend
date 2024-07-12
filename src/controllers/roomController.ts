@@ -47,7 +47,7 @@ export const updateRoomStatus = async (req: Request, res: Response): Promise<voi
       checkOutDate.setMinutes(checkOutDate.getMinutes() + 2 * 60); // Move forward by 2 hours to account for UTC+2
       checkOutDate.setDate(checkOutDate.getDate() + 1); // Move to the next day
       checkOutDate.setHours(10, 0, 0, 0); // Set time to 10:00 AM local time
-      checkOutDate.setMinutes(checkOutDate.getMinutes() + 3 * 60); // Move back by 2 hours to convert back to UTC for storage
+      checkOutDate.setMinutes(checkOutDate.getMinutes() + 1 * 60); // Move back by 2 hours to convert back to UTC for storage
       
       await new OccupancyLog({
         roomNumber: room.roomNumber,
