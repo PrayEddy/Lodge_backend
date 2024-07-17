@@ -2,6 +2,7 @@ import Room from '../models/Room';
 import { Request, Response } from 'express';
 import { RoomDocument } from '../types/types';
 import OccupancyLog from '../models/OccupancyLog';
+import * as schedule from 'node-schedule';
 
 export const createRoom = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -41,14 +42,12 @@ export const updateRoomStatus = async (req: Request, res: Response): Promise<voi
 
     if (newOccupationStatus) {
       const checkInDate = new Date(); // Current date and time in local time zone
-      const checkOutDate = new Date(checkInDate.getTime()); // Copy current date
+      const checkOutDate = new Date(); // Current date
       
-      // Adjust for local time zone (+2 hours offset from UTC)
-      checkOutDate.setMinutes(checkOutDate.getMinutes() + 2 * 60); // Move forward by 2 hours to account for UTC+2
-      checkOutDate.setDate(checkOutDate.getDate() + 1); // Move to the next day
-      checkOutDate.setHours(10, 0, 0, 0); // Set time to 10:00 AM local time
-      checkOutDate.setMinutes(checkOutDate.getMinutes() + 1 * 60); // Move back by 2 hours to convert back to UTC for storage
-      
+      // Set check-out date to the next day at 10:00 AM local time
+      checkOutDate.setDate(checkOutDate.getDate() + 1); 
+      checkOutDate.setHours(10, 0, 0, 0); 
+
       await new OccupancyLog({
         roomNumber: room.roomNumber,
         checkInDate,
@@ -59,6 +58,14 @@ export const updateRoomStatus = async (req: Request, res: Response): Promise<voi
       room.isOccupied = newOccupationStatus;
       room.checkInDate = checkInDate;
       room.checkOutDate = checkOutDate;
+
+      // Schedule room status to be set to false the next day at 10 AM
+      const job = schedule.scheduleJob(checkOutDate, async function() {
+        room.isOccupied = false;
+        room.checkInDate = null;
+        room.checkOutDate = null;
+        await room.save();
+      });
     } else {
       room.isOccupied = newOccupationStatus;
       room.checkInDate = null;
@@ -66,14 +73,12 @@ export const updateRoomStatus = async (req: Request, res: Response): Promise<voi
     }
 
     const updatedRoom = await room.save();
-
     res.json(updatedRoom);
   } catch (error) {
     console.error('Error updating room status:', error);
     res.status(500).json({ message: 'Failed to update room status' });
   }
 };
-
 
 
 export const getOccupiedRoomsByDate = async (req: Request, res: Response): Promise<void> => {
